@@ -29,7 +29,7 @@ While waiting for the judges to inevitably smoke us during presentation day, the
 
 ## 2. The Architecture Shift: Go Backend & Decoupled SDKs
 
-We got cooked at the hackathon, but the technical challenge stuck with me. This wasn't a wrapper; it was real tech protecting web apps.
+We got cooked at the hackathon, but the technical challenge stuck with me. I thought it would be a fun experience.
 
 I chose Go for the backend engine. I had never been a pure backend engineer—it doesn't give me the same rush as writing compilers or low-level systems infrastructure—but the team dynamics forced my hand. Out of a five-person team, only my close friend and I were actual builders. The other three were non-contributing partners who did nothing but talk. To make the platform a reality, we had to build fast.
 
@@ -144,7 +144,7 @@ By instantly dropping an automated firewall block on the attacker's IP the momen
 
 ## 4. What I Have Learnt
 
-**Engineering Isn't Everything**: As a developer, I love pure infrastructure engineering, but business is driven by distribution. A bulletproof software engine is useless if you cannot market it or convince customers of its monetization value.
+**Engineering Isn't Everything**: As a developer, I love pure infrastructure engineering, but business is driven by distribution. A bulletproof software engine is useless if you cannot market it or convince customers of its monetization value, which is why I hate business.
 
 **Backend Development is Manageable**: It lacks the elegance of compiler design or low-level ML hardware execution layers, but building highly concurrent systems in Go to process massive request streams is a solid engineering challenge.
 
