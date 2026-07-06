@@ -33,7 +33,7 @@
 <p>The pipeline ingested a raw JSON request, passed it wholesale to a massive LLM with a flimsy prompt, and asked it to investigate like a tier-one SOC analyst. No schema constraints, no input validation, no deterministic parsing. It was slow as hell, expensive as fuck, and completely impractical for real-world production traffic.</p>
 <p>While waiting for the judges to inevitably smoke us during presentation day, the practical solution hit me. I thought about Stripe. They don't make you reroute your whole network; they provide lightweight, native SDKs that drop right into your backend code to handle the heavy lifting.</p>
 <h2>2. The Architecture Shift: Go Backend &amp; Decoupled SDKs</h2>
-<p>We got cooked at the hackathon, but the technical challenge stuck with me. This wasn't a wrapper; it was real tech protecting web apps.</p>
+<p>We got cooked at the hackathon, but the technical challenge stuck with me. I thought it would be a fun experience.</p>
 <p>I chose Go for the backend engine. I had never been a pure backend engineer—it doesn't give me the same rush as writing compilers or low-level systems infrastructure—but the team dynamics forced my hand. Out of a five-person team, only my close friend and I were actual builders. The other three were non-contributing partners who did nothing but talk. To make the platform a reality, we had to build fast.</p>
 <p>Our core architectural blueprint decoupled the application runtime from the detection cluster using language-specific middlewares (SDKs):</p>
 <div class="codehilite"><pre><span></span><code><span class="c">   User Request</span>
@@ -138,7 +138,7 @@
 
 <p>By instantly dropping an automated firewall block on the attacker's IP the moment a mechanical signature is hit, we break the attacker's feedback loop. If a malicious actor has to rotate their proxy or IP address after every single exploit variation, the cost of attack skyrockets, and they move on.</p>
 <h2>4. What I Have Learnt</h2>
-<p><strong>Engineering Isn't Everything</strong>: As a developer, I love pure infrastructure engineering, but business is driven by distribution. A bulletproof software engine is useless if you cannot market it or convince customers of its monetization value.</p>
+<p><strong>Engineering Isn't Everything</strong>: As a developer, I love pure infrastructure engineering, but business is driven by distribution. A bulletproof software engine is useless if you cannot market it or convince customers of its monetization value, which is why I hate business.</p>
 <p><strong>Backend Development is Manageable</strong>: It lacks the elegance of compiler design or low-level ML hardware execution layers, but building highly concurrent systems in Go to process massive request streams is a solid engineering challenge.</p>
 <p><strong>People Come and Go</strong>: Protect your peace, build exclusively with active creators, and don't optimize for making passengers comfortable. As Drake cleanly put it in <em>Fair Trade</em>:</p>
 <blockquote>
