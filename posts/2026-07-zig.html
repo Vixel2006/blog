@@ -14,11 +14,13 @@
         <article>
             <h1 class="post-title">Why I Fell in Love with Zig</h1>
             <div class="post-meta">2026-07</div>
-            <p>Last couple of weeks, I tried to learn Zig, and I went into it with the assumption that it's another highly-bloated piece of software with too many abstractions that make the language more complex instead of making it easier to develop with. The last language that I had experienced this with is Rust. I think the ownership approach to manage memory is actually very clever, but it's not that great for me to pair with all this unnecessary complexity that Rust introduces while working. Basically, Rust is not fun to write and read (at least for me). Some people will say that Rust is more fun to write than Go as Go is flat and stuff, and will basically tell you to go work on real problems bro, the fun thinking should be done about the problem on hand and the solution for it, not for what language concept to use in order to implement the logic you have already designed.</p>
-<p>So what is great about Zig other than its simplicity?</p>
+            <p>Over the last couple of weeks, I set out to learn Zig. I went into it assuming it would be just another bloated piece of software weighed down by too many layers of abstraction—the kind that makes a language more complex instead of making development easier. </p>
+<p>The last language that gave me that headache was Rust. Don't get me wrong, Rust's ownership model for managing memory is clever. But for me, it's just not worth dealing with all the unnecessary complexity Rust forces on you while you work. To put it simply: Rust is just not fun to write or read. </p>
+<p>Some people will claim Rust is more fun than Go because Go is "too flat," and they'll tell you to "go work on real problems, bro." But the fun, creative thinking should be spent solving the actual problem at hand—not fighting the language's syntax or trying to figure out which hyper-abstract concept you need to implement basic logic.</p>
+<p>So, what makes Zig so great, besides its simplicity?</p>
 <hr />
 <h2>comptime</h2>
-<p>comptime is actually very great. It's definitely a better version of macros in C/C++, and proc_macros in Rust. It's so fucking intuitive and easy to use. It basically comes naturally with the program flow.</p>
+<p><code>comptime</code> is absolutely incredible. It is a massive upgrade over C/C++ macros and Rust's <code>proc_macro</code>. It is so intuitive and easy to use because it flows naturally with the rest of the program.</p>
 <h3>C Approach: Preprocessor Magic</h3>
 <div class="codehilite"><pre><span></span><code><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdio.h&gt;</span>
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdbool.h&gt;</span>
@@ -146,16 +148,17 @@
 <span class="p">}</span>
 </code></pre></div>
 
-<p>I think if you have any kind of taste for programming you will clearly see that the comptime solution is much more elegant.</p>
-<h2>How Zig proved that adding new abstraction layers is not the solution for simpler software</h2>
-<p>It's very curious for me that Rust and C++ tried to fix C by adding new abstraction layers over each other and still managed to be so complicated and hard to write and read, while Zig removed the memory allocation and I/O abstractions in C (which are some of the rare abstractions in C) and have a very simple and fun language to write and read.</p>
-<p>I think by now it's obvious that I'm a big fan of the no-hidden allocation, control-flow, or preprocessor. It's actually a very interesting philosophy to adopt, and it made the code actually great. I mean, not having hidden allocations or control-flow makes the code you write very predictable and makes debugging much easier.</p>
+<p>If you have any taste for programming, you can clearly see that the <code>comptime</code> solution is miles ahead in terms of elegance.</p>
+<hr />
+<h2>How Zig Proved That Adding More Abstractions Isn't the Answer</h2>
+<p>It is fascinating to me how Rust and C++ tried to "fix" C by stacking layers of abstraction on top of it, only to end up being bloated, complicated, and a chore to read and write. Meanwhile, Zig took a different path: it removed some of the few implicit abstractions C actually has (like hidden memory allocations and magic I/O), giving us a language that is both incredibly simple and fun to work with.</p>
+<p>By now, it's probably obvious that I'm a massive fan of having no hidden allocations, no hidden control flow, and no preprocessor magic. This philosophy makes your code predictable and debugging infinitely easier.</p>
 <h3>Explicit Memory Allocation</h3>
 <div class="codehilite"><pre><span></span><code><span class="kr">const</span><span class="w"> </span><span class="n">std</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">@import</span><span class="p">(</span><span class="s">&quot;std&quot;</span><span class="p">);</span>
 
 <span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="o">!</span><span class="kt">void</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="c1">// 1. Explicit Memory Strategy</span>
-<span class="w">    </span><span class="c1">// We explicitly choose a General Purpose Allocator. The runtime does not provide one.</span>
+<span class="w">    </span><span class="c1">// We explicitly choose a General Purpose Allocator. The runtime does not hide this.</span>
 <span class="w">    </span><span class="kr">var</span><span class="w"> </span><span class="n">gpa</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="p">.</span><span class="n">heap</span><span class="p">.</span><span class="n">GeneralPurposeAllocator</span><span class="p">(.{}){};</span>
 <span class="w">    </span><span class="k">defer</span><span class="w"> </span><span class="n">_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gpa</span><span class="p">.</span><span class="n">deinit</span><span class="p">();</span><span class="w"> </span><span class="c1">// Enforce leak checking at scope exit</span>
 <span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">allocator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gpa</span><span class="p">.</span><span class="n">allocator</span><span class="p">();</span>
@@ -168,7 +171,7 @@
 <span class="w">    </span><span class="c1">// 3. Explicit Control Flow and Error Handling</span>
 <span class="w">    </span><span class="c1">// Appending can fail if the system runs out of memory. </span>
 <span class="w">    </span><span class="c1">// Zig forces you to acknowledge this with the `try` keyword. </span>
-<span class="w">    </span><span class="c1">// There are no invisible exceptions catching this—it explicitly bubbles up the call stack.</span>
+<span class="w">    </span><span class="c1">// There are no invisible exceptions—it explicitly bubbles up the call stack.</span>
 <span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="n">list</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="mi">42</span><span class="p">);</span>
 <span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="n">list</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1337</span><span class="p">);</span>
 
@@ -176,7 +179,8 @@
 <span class="p">}</span>
 </code></pre></div>
 
-<p>Just having explicitly defining the allocator with the allocation strategy we want to use actually makes memory management much easier to work with and actually the defer keywords also helps a lot.</p>
+<p>Defining your allocation strategy explicitly makes managing memory straightforward, and the <code>defer</code> keyword keeps cleanup simple and clean.</p>
+<hr />
 <h3>Explicit I/O Subsystem</h3>
 <div class="codehilite"><pre><span></span><code><span class="kr">const</span><span class="w"> </span><span class="n">std</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">@import</span><span class="p">(</span><span class="s">&quot;std&quot;</span><span class="p">);</span>
 
@@ -185,7 +189,7 @@
 <span class="w">    </span><span class="c1">// This doesn&#39;t happen automatically; you must ask the OS subsystem for it.</span>
 <span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">stdout_file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="p">.</span><span class="n">io</span><span class="p">.</span><span class="n">getStdOut</span><span class="p">();</span>
 
-<span class="w">    </span><span class="c1">// 2. Initialize a unbuffered or buffered Writer stream</span>
+<span class="w">    </span><span class="c1">// 2. Initialize a buffered Writer stream</span>
 <span class="w">    </span><span class="c1">// Zig separates the raw file descriptor from the stream interface.</span>
 <span class="w">    </span><span class="c1">// If you want buffering to prevent frequent system calls, you wrap it explicitly.</span>
 <span class="w">    </span><span class="kr">var</span><span class="w"> </span><span class="n">bw</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="p">.</span><span class="n">io</span><span class="p">.</span><span class="n">bufferedWriter</span><span class="p">(</span><span class="n">stdout_file</span><span class="p">.</span><span class="n">writer</span><span class="p">());</span>
@@ -202,18 +206,51 @@
 <span class="p">}</span>
 </code></pre></div>
 
-<p>the code above is basically how you make a production <code>printf</code> in zig. you would think it's tedious and have boilerplate. and you maybe right about it. but I think it's so good. what it really do is basically it makes you initialiaze an io device with your own implemenation details so that you can have full control on the code you're writing, you might think that this's too much control. if you think that's true then basically go do some web-dev on a stupid startup that sells shitty solution for unexistant problems with 100K loc of boilerplate for some CRUD processes.</p>
-<p>The code above is basically how you make a production <code>printf</code> in Zig. You would think it's tedious and has boilerplate, and you maybe right about it, but I think it's so good. What it really does is basically it makes you initialize an I/O device with your own implementation details so that you can have full control on the code you're writing. You might think that this is too much control. If you think that's true, then basically go do some web-dev on a stupid startup that sells shitty solutions for non-existent problems with 100K LOC of boilerplate for some CRUD processes.</p>
-<h2>Build Systems: what got me into zig in the first place</h2>
-<p>This is actually the reason why I got into Zig in the first place. I love C so much, but if there is a thing in C that drives me crazy every time I write code in it, it is its build system. You should use CMake, Makefiles for it, you have to install, build, and link your third-party deps to your code manually. (Although I wouldn't lie, a big part of my programming skills came from the fact that I was building my C projects with no external deps because I was too lazy to do this linking process). But now when you want to create some real cool and useful stuff it's actually very important to have a good build system, and Zig does this for you, and it also gives you a good build system for C and C++.</p>
-<p>I didn't use it with the C and C++ build system, even though I imported some C libraries in it like <code>cuda</code> and <code>vulkan</code> and it was very smooth, and for my latest project glu I have exported my Zig API functions and types into C and it was actually a great experience</p>
-<h2>Zig is not perfect</h2>
-<p>I have been spending the last few minutes of my day and your day trying to convince you why zig is great and you shoudl use it. but it's not prefect (just like everything else). and currently while I'm talking I'm not expert in zig by any mean so I still don't know all the rough edges of it, but one fatal issue with it is it still didn't have <code>v1.0.0</code> which means that with each new version, there is alot of the api of the standard library is basically obsolote. which is a backward compatability nightmere for your apps. and also you can install a zig apckage to use in your project and your project just don't compile because this library last update was in the zig <code>v0.15.0</code> and you're writting in <code>v0.16.0</code> and the standard library api has changed drastically. also the community is small, (very smart and nice people but still small community).</p>
-<p>I have been spending the last few minutes of my day and your day trying to convince you why Zig is great and you should use it, but it's not perfect (just like everything else). And currently while I'm talking I'm no expert in Zig by any means so I still don't know all the rough edges of it, but one fatal issue with it is it still doesn't have <code>v1.0.0</code> which means that with each new version, there is a lot of the API of the standard library that is basically obsolete, which is a backward compatibility nightmare for your apps. And also you can install a Zig package to use in your project and your project just doesn't compile because this library's last update was in the Zig <code>v0.15.0</code> and you're writing in <code>v0.16.0</code> and the standard library API has changed drastically. Also the community is small (very smart and nice people but still a small community).</p>
-<h2>Will I use zig for large projects</h2>
-<p>Absolutely. Actually I'm currently working on a robotics communication framework from scratch. I'm building it to be a very lightweight and clever replacement for ROS2 if you really want a performant solution for your robots without the ROS2 bloat, as I think ROS2 is very hated between indies, and it's not a good choice for large labs that need to work on performant stuff. I'm trying to make glu the open-source solution for this, and I'm building it with Zig. Will the backward compatibility problem bite me in the ass? Probably yes, but I think this language is good enough to risk it, and I hope glu becomes a reliable system for real production.</p>
-<h2>Not so important note</h2>
-<p>As Zig is not so mature a language in terms of the community and it changes frequently, and because LLMs are basically just copycats and there are not so many repos to copy for now, it's not that much fluent with Zig. But I mean if you want to learn Zig which is a systems language, you should be passionate about programming to write most of the heavy-lifting of your projects on your own and just use AI for the boilerplate that it can write easily.</p>
+<p>The code above is essentially how you write a production-grade <code>printf</code> in Zig. You might look at this and think it's tedious boilerplate. You might even be right. But I think it's beautiful. </p>
+<p>What it actually does is force you to initialize your I/O devices with explicit implementation details. You get absolute control over your code. If you think that's "too much control," then go back to doing web development at some bloated startup, selling over-engineered solutions to non-existent problems using 100K lines of boilerplate for basic CRUD apps.</p>
+<h3>How <code>std.io</code> Actually Works Under the Hood (Peak Comptime)</h3>
+<p>If you look at how other languages handle I/O, they usually rely on virtual tables (vtables) or interface types for dynamic dispatch. Rust has <code>std::io::Write</code> trait objects; Go has <code>io.Writer</code> interfaces. This works, but it adds runtime overhead.</p>
+<p>Zig doesn't do dynamic dispatch here. Instead, it uses <code>comptime</code> duck typing to construct writers and readers on the fly. </p>
+<p>In the standard library, <code>std.io.Writer</code> is just a function that returns a type:</p>
+<div class="codehilite"><pre><span></span><code><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="n">Writer</span><span class="p">(</span>
+<span class="w">    </span><span class="kr">comptime</span><span class="w"> </span><span class="n">Context</span><span class="o">:</span><span class="w"> </span><span class="kt">type</span><span class="p">,</span>
+<span class="w">    </span><span class="kr">comptime</span><span class="w"> </span><span class="n">Error</span><span class="o">:</span><span class="w"> </span><span class="kt">type</span><span class="p">,</span>
+<span class="w">    </span><span class="kr">comptime</span><span class="w"> </span><span class="n">writeFn</span><span class="o">:</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="p">(</span><span class="n">context</span><span class="o">:</span><span class="w"> </span><span class="n">Context</span><span class="p">,</span><span class="w"> </span><span class="n">bytes</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">)</span><span class="w"> </span><span class="n">Error</span><span class="o">!</span><span class="kt">usize</span><span class="p">,</span>
+<span class="p">)</span><span class="w"> </span><span class="kt">type</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">context</span><span class="o">:</span><span class="w"> </span><span class="n">Context</span><span class="p">,</span>
+<span class="w">        </span><span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">ErrorSet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Error</span><span class="p">;</span>
+<span class="w">        </span><span class="kr">const</span><span class="w"> </span><span class="n">Self</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">@this</span><span class="p">();</span>
+
+<span class="w">        </span><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="n">write</span><span class="p">(</span><span class="n">self</span><span class="o">:</span><span class="w"> </span><span class="n">Self</span><span class="p">,</span><span class="w"> </span><span class="n">bytes</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">)</span><span class="w"> </span><span class="n">Error</span><span class="o">!</span><span class="kt">usize</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">writeFn</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="n">bytes</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="c1">// ... provides helper methods like print(), writeAll(), writeByte() at compile-time</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This is insanely powerful. Any struct that implements a <code>write</code> function can be instantly wrapped into a full-featured <code>Writer</code> at compile time. No vtables, no interfaces, and zero virtual call overhead. The compiler resolves it all down to direct function calls.</p>
+<p>For a project like <code>glu</code>—where I'm building a lightweight robotics communication framework to replace the bloated monster that is ROS2—this is a lifesaver. When publishing telemetry or serializing command payloads over TCP/UDP sockets or serial lines, I can wrap raw handles in custom writers without paying any abstraction tax. Every single byte goes exactly where it needs to, precisely when it needs to, with absolute predictability.</p>
+<hr />
+<h2>Build Systems: What Got Me Into Zig in the First Place</h2>
+<p>This is the main reason I got into Zig. I love C, but its build system options are enough to drive anyone crazy. You are stuck wrestling with CMake or Makefiles, and you have to manually install, build, and link your third-party dependencies. (Though to be honest, a big reason I got decent at programming was because I used to build C projects with zero external dependencies out of sheer laziness to avoid the linking nightmare). </p>
+<p>But when you want to build actual, real-world systems, you need a solid build system. Zig gives you that—and it doubles as an amazing build system for C and C++ projects too.</p>
+<p>While I haven't used the full C/C++ build system integration yet, importing libraries like <code>cuda</code> and <code>vulkan</code> into Zig was incredibly smooth. And for my latest project, <code>glu</code>, exporting my Zig API functions and types back into C has been a flawless experience.</p>
+<hr />
+<h2>Zig is Not Perfect</h2>
+<p>I've spent this entire post trying to convince you why Zig is great and why you should use it. But it is not perfect. Nothing is.</p>
+<p>For one, I'm definitely not a Zig expert yet, so I'm still discovering its rough edges. But the most obvious challenge right now is that Zig has not reached <code>v1.0.0</code>. With every new release, parts of the standard library API are broken or deprecated. It's a backward-compatibility nightmare. You might pull in a third-party package only for it to fail to compile because the library was written for Zig <code>v0.15.0</code> and you're using <code>v0.16.0</code>. </p>
+<p>On top of that, the community is still relatively small. They are brilliant and incredibly helpful people, but it's a small crowd nonetheless.</p>
+<hr />
+<h2>Will I Use Zig for Large Projects?</h2>
+<p>Absolutely. I am currently building a robotics communication framework called <code>glu</code> from scratch. The goal is to make it a lightweight, high-performance alternative to ROS2—a framework that is widely disliked by indie developers and frustrating for labs that need maximum performance without the ROS2 bloat. </p>
+<p>I'm writing <code>glu</code> entirely in Zig. Will the backward-compatibility breaks bite me in the ass? Probably. But the language is so good that it's a risk I'm more than willing to take. I want <code>glu</code> to be a rock-solid, reliable system for real production work.</p>
+<hr />
+<h2>A Final Note on AI and Zig</h2>
+<p>Because Zig is a younger language and still changes rapidly, LLMs struggle with it. LLMs are essentially advanced copycats, and since there aren't millions of Zig repositories to copy from yet, they often write broken code. </p>
+<p>But if you want to learn a systems language like Zig, you should have the passion to write most of the heavy-lifting logic yourself anyway. Use the AI to spit out the boring boilerplate, and write the real code on your own.</p>
         </article>
     </main>
 

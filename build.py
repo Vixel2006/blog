@@ -217,18 +217,22 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Systems &amp; ML Engineer</title>
+    <title>Yusuf Shihata — Robotics &amp; Systems Engineer</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <h1>Systems &amp; ML Engineer</h1>
-        <div class="subtitle">c / cuda / zig / go</div>
+        <h1>Yusuf Shihata</h1>
+        <div class="subtitle">Robotics, DL/RL, &amp; Systems Engineer &middot; c / cuda / zig / go</div>
         <p>
-            I build performance-critical infrastructure, low-level development tools, and deep learning internals from scratch. I care about mechanical sympathy, high concurrency, and stripping away unnecessary abstraction layers.
+            I build real solutions for real problems. I design performance-critical robotics communication protocols, low-level reinforcement learning infrastructure, and custom deep learning libraries from scratch. 
+        </p>
+        <p>
+            I care about reducing complexity, maximizing efficiency, and restoring mechanical sympathy to software. I absolutely despise capitalism, corporate bloat, and AI slop. If you're building lightweight systems that actually add real value, we'll get along.
         </p>
         <p>
             <a href="https://github.com/Vixel2006" target="_blank">github</a> &middot;
+            <a href="https://x.com/this_vixel" target="_blank">x (twitter)</a> &middot;
             <a href="mailto:yusufshihata2006@gmail.com">email</a>
         </p>
     </header>
@@ -237,6 +241,13 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         <section>
             <h2>Software &amp; Frameworks</h2>
             <ul>
+                <li>
+                    <div class="item-row">
+                        <a href="https://github.com/Vixel2006/glu" target="_blank">glu</a>
+                        <span class="item-detail">zig</span>
+                    </div>
+                    <span class="desc">A lightweight, high-performance robotics communication framework designed from scratch. Serves as a zero-bloat, direct alternative to ROS2, featuring zero-overhead serialization and deterministic real-time communication.</span>
+                </li>
                 <li>
                     <div class="item-row">
                         <a href="https://github.com/Vixel2006/plast" target="_blank">plast</a>
