@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
-
 :root {
     --bg: #1e1e2e;
     --text: #cdd6f4;
@@ -51,7 +49,6 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -281,7 +278,7 @@ article tr:last-child td {
 }
 
 footer {
-    margin-top: 60px;
+    margin-top: auto;
     font-size: 11px;
     color: var(--muted);
     border-top: 1px solid var(--border);
