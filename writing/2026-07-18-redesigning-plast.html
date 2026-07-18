@@ -20,7 +20,7 @@
     <main>
         <article>
             <h1 class="post-title">Re-designing Plast for more elegant solution</h1>
-            <div class="post-meta">2026-07</div>
+            <div class="post-meta">July 18, 2026</div>
             <p>Over the last couple of weeks I have been working on my robotics communication framework in Zig. I finalized the core for the first version that I will publish, so I thought it's a good time to go work on something else for a couple of days so I don't burn out — the project was starting to feel boring. I'm very interested in Physical AI and robotics, so I decided to go back to <code>plast</code>, which is my simple deep learning framework written in <code>c</code> and <code>cuda</code>. I already implemented the cpu and gpu kernels for most of the tensor ops needed, built a tiny <code>JIT</code> compiler for it, and made python bindings so people can use it with an experiment tracking system. But there is something else. As someone interested in physical AI and robotics, this library is useless to me without the ability to do reinforcement learning with ease.</p>
 <h2>Why rewrite in Zig?</h2>
 <p>I think this shouldn't be a shocker by now. I invested a good amount of time learning and writing Zig, and built glu from scratch in pure Zig. To be honest, writing python code for robots is not ideal — you don't get much control over your resources. And writing the api in c is not the most enjoyable experience you can get. So re-writing the core in Zig is a win. It's a good mixture of both worlds: I still have fine-grained control over hardware resources, and I get a decent api that is enjoyable to work with.</p>

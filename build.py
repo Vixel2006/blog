@@ -6,6 +6,7 @@ Usage: python3 build.py
 import os
 import re
 import glob
+from datetime import datetime
 import markdown
 from pygments.style import Style
 from pygments.token import (
@@ -317,8 +318,11 @@ def extract_title(text):
 
 
 def extract_date(filename):
-    m = re.search(r'(\d{4}-\d{2})', filename)
-    return m.group(1) if m else ""
+    m = re.search(r'(\d{4})-(\d{2})-(\d{2})', filename)
+    if not m:
+        return ""
+    dt = datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    return f"{dt.strftime('%B')} {dt.day}, {dt.year}"
 
 
 def post_item_html(title, date, slug):
