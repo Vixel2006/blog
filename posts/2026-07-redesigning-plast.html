@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Re-designing Plast for more elegant solution — Systems &amp; ML Engineer</title>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../pygments.css">
+</head>
+<body>
+    <nav><a href="../index.html">← back</a></nav>
+
+    <main>
+        <article>
+            <h1 class="post-title">Re-designing Plast for more elegant solution</h1>
+            <div class="post-meta">2026-07</div>
+            <p>Over the last couple of weeks I have been working on my robotics communication framework in Zig. I finalized the core for the first version that I will publish, so I thought it's a good time to go work on something else for a couple of days so I don't burn out — the project was starting to feel boring. I'm very interested in Physical AI and robotics, so I decided to go back to <code>plast</code>, which is my simple deep learning framework written in <code>c</code> and <code>cuda</code>. I already implemented the cpu and gpu kernels for most of the tensor ops needed, built a tiny <code>JIT</code> compiler for it, and made python bindings so people can use it with an experiment tracking system. But there is something else. As someone interested in physical AI and robotics, this library is useless to me without the ability to do reinforcement learning with ease.</p>
+<h2>Why rewrite in Zig?</h2>
+<p>I think this shouldn't be a shocker by now. I invested a good amount of time learning and writing Zig, and built glu from scratch in pure Zig. To be honest, writing python code for robots is not ideal — you don't get much control over your resources. And writing the api in c is not the most enjoyable experience you can get. So re-writing the core in Zig is a win. It's a good mixture of both worlds: I still have fine-grained control over hardware resources, and I get a decent api that is enjoyable to work with.</p>
+<p>"But rewriting a full deep learning framework from scratch seems like a premature decision that will take too much time." I figured you might ask that. And maybe you'd be correct. But the project wasn't that big. Running <code>cloc . --exclude-content=kernels/ --exclude-lang=zig</code> on my <code>src/</code> folder gives me this:</p>
+<div class="codehilite"><pre><span></span><code><span class="nb">-------------------------------------------------------------------------------</span>
+<span class="c">Language                     files          blank        comment           code</span>
+<span class="nb">-------------------------------------------------------------------------------</span>
+<span class="c">HTML                             4             54              2            521</span>
+<span class="c">CSS                              2             48              0            403</span>
+<span class="c">Markdown                         2            122              0            343</span>
+<span class="c">Python                           1             56            191            127</span>
+<span class="nb">-------------------------------------------------------------------------------</span>
+<span class="c">SUM:                             9            280            193           1394</span>
+<span class="nb">-------------------------------------------------------------------------------</span>
+</code></pre></div>
+
+<p>Most of the code lives in the <code>kernels/</code> folder with the <code>c</code> and <code>cuda</code> kernels. The project wasn't that large after all. So I decided to re-write the core in Zig, keep the kernels, and just use the <code>extern</code> keyword to link them in the build system. Same kernels, no re-write, but now the system is in a language I can actually enjoy working with. Win-win.</p>
+<h2>The problem with hand-written kernels</h2>
+<p>The approach I'm using right now is hand-writing every single kernel for every operation. This is not ideal. First, it means too much code. In <code>c</code> that means writing optimized kernels for every data type. When writing <code>cuda</code> kernels, the execution configuration alone can make or break performance. And one of the most important optimization techniques in ML compilers — kernel fusion — becomes a nightmare of combinatorial explosion.</p>
+<p>Kernel fusion is about writing a single kernel that composes multiple operations together. Take the most used <code>nn</code> layer in deep learning: <code>Linear</code>, which is basically <code>input @ weight.T + bias</code>. Why load <code>input</code> and <code>weights</code> from memory, do matmul, store the output, then load that result back to add <code>bias</code>, then store again? If you have been paying attention (congrats for not being brain-rotted) you'll notice we just did <code>(4) loads</code> and <code>(2) stores</code> across two separate function frames with jump operations in between. That shit is a performance killer.</p>
+<p>With kernel fusion we write a single <code>matmul_add</code> kernel: matmul then add in the same frame. No jump ops. In this version we do <code>(3) loads</code> and <code>(1) store</code>. We saved one load and one store, which is significant because loads and stores are the most expensive operations in computer hardware.</p>
+<p>With hand-written kernels we would need to write every fused variant separately, and all of them need to be exported to Zig. Plus the code is ugly. Look at this:</p>
+<div class="codehilite"><pre><span></span><code><span class="kr">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">add_kernel_float_contig</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">num_elements</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">tid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">blockDim</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nb">blockIdx</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">threadIdx</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">num_elements</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">c</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="n">tid</span><span class="p">];</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kr">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">add_kernel_int_contig</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">num_elements</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">tid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">blockDim</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nb">blockIdx</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">threadIdx</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">num_elements</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">c</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="n">tid</span><span class="p">];</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kr">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">sub_kernel_float_contig</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">num_elements</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">tid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">blockDim</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nb">blockIdx</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">threadIdx</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">num_elements</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">c</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="n">tid</span><span class="p">];</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kr">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">sub_kernel_int_contig</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">num_elements</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">tid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">blockDim</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nb">blockIdx</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">threadIdx</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">num_elements</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">c</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="n">tid</span><span class="p">];</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+
+<span class="kr">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">mul_kernel_float_contig</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">num_elements</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">tid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">blockDim</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nb">blockIdx</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">threadIdx</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">num_elements</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">c</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="n">tid</span><span class="p">];</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kr">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">mul_kernel_int_contig</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">num_elements</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">tid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">blockDim</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nb">blockIdx</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">threadIdx</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">num_elements</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">c</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="n">tid</span><span class="p">];</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>And this is only for two data types, without even considering noncontiguous data layouts from slicing and movement ops like <code>broadcast</code> and <code>expand</code>.</p>
+<h2>Codegen to the rescue</h2>
+<p>As a big fan of geohot, I was very interested in studying how tinygrad works. Tinygrad has a similar philosophy to <code>tvm</code>. Here's how <code>tvm</code> works: it captures the computation graph, lowers it to an <code>IR</code> representation, optimizes it with <code>MLIR</code>, and executes the optimized graph.</p>
+<p>Tinygrad doesn't work exactly the same way, but the philosophy is similar. Instead of hand-writing every kernel — which is what I'm doing in plast — it has a <code>codegen</code> module. This module uses the <code>UOp</code> datatype to write kernels at runtime as needed. Using something called a <code>Linearizer</code>, it tries different optimization techniques like loop unrolling and shared memory usage on cuda, launches kernels with different configurations, and uses Beam Search to pick the fastest one.</p>
+<p>You might think "this is very slow". You're not completely right, but you're not completely wrong either. It's slower on the first batch because it has to build the graph and write the optimized kernels. But with a JIT compiler we cache the resulting graph and kernels, so every subsequent batch uses them directly. This gives us a highly optimized graph without writing a kernel for every single combination of constraints.</p>
+<p>Now let's look at how to generate all those ugly kernels from the previous section on the fly:</p>
+<div class="codehilite"><pre><span></span><code><span class="kr">const</span><span class="w"> </span><span class="n">std</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">@import</span><span class="p">(</span><span class="s">&quot;std&quot;</span><span class="p">);</span>
+
+<span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">DataType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">float</span><span class="p">,</span>
+<span class="w">    </span><span class="n">int</span><span class="p">,</span>
+
+<span class="w">    </span><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="n">toCudaTypeString</span><span class="p">(</span><span class="n">self</span><span class="o">:</span><span class="w"> </span><span class="n">DataType</span><span class="p">)</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">self</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="p">.</span><span class="n">float</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="s">&quot;float&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="p">.</span><span class="n">int</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="s">&quot;int&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="p">};</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
+
+<span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">OpType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">add</span><span class="p">,</span>
+<span class="w">    </span><span class="n">sub</span><span class="p">,</span>
+<span class="w">    </span><span class="n">mul</span><span class="p">,</span>
+
+<span class="w">    </span><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="n">toChar</span><span class="p">(</span><span class="n">self</span><span class="o">:</span><span class="w"> </span><span class="n">OpType</span><span class="p">)</span><span class="w"> </span><span class="kt">u8</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">self</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="p">.</span><span class="n">add</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="s">&#39;+&#39;</span><span class="p">,</span>
+<span class="w">            </span><span class="p">.</span><span class="n">sub</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="s">&#39;-&#39;</span><span class="p">,</span>
+<span class="w">            </span><span class="p">.</span><span class="n">mul</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="s">&#39;*&#39;</span><span class="p">,</span>
+<span class="w">        </span><span class="p">};</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
+
+<span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">Op</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">op_type</span><span class="o">:</span><span class="w"> </span><span class="n">OpType</span><span class="p">,</span>
+<span class="w">    </span><span class="n">data_type</span><span class="o">:</span><span class="w"> </span><span class="n">DataType</span><span class="p">,</span>
+
+<span class="w">    </span><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="n">generateKernel</span><span class="p">(</span><span class="n">self</span><span class="o">:</span><span class="w"> </span><span class="n">Op</span><span class="p">,</span><span class="w"> </span><span class="n">allocator</span><span class="o">:</span><span class="w"> </span><span class="n">std</span><span class="p">.</span><span class="n">mem</span><span class="p">.</span><span class="n">Allocator</span><span class="p">)</span><span class="w"> </span><span class="o">!</span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kr">const</span><span class="w"> </span><span class="n">op_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">@tagName</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">op_type</span><span class="p">);</span>
+<span class="w">        </span><span class="kr">const</span><span class="w"> </span><span class="n">type_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">@tagName</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">data_type</span><span class="p">);</span>
+<span class="w">        </span><span class="kr">const</span><span class="w"> </span><span class="n">type_c_str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">data_type</span><span class="p">.</span><span class="n">toCudaTypeString</span><span class="p">();</span>
+<span class="w">        </span><span class="kr">const</span><span class="w"> </span><span class="n">op_char</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">op_type</span><span class="p">.</span><span class="n">toChar</span><span class="p">();</span>
+
+<span class="w">        </span><span class="kr">const</span><span class="w"> </span><span class="n">template</span><span class="w"> </span><span class="o">=</span>
+<span class="w">            </span><span class="sh">\\__global__ void {s}_kernel_{s}_contig(const {s} *a, const {s} *b, {s} *c, int num_elements) {{</span>
+<span class="w">            </span><span class="sh">\\    int tid = blockDim.x * blockIdx.x + threadIdx.x;</span>
+<span class="w">            </span><span class="sh">\\</span>
+<span class="w">            </span><span class="sh">\\    if (tid &lt; num_elements) {{</span>
+<span class="w">            </span><span class="sh">\\        c[tid] = a[tid] {c} b[tid];</span>
+<span class="w">            </span><span class="sh">\\    }}</span>
+<span class="w">            </span><span class="sh">\\}}</span>
+<span class="w">            </span><span class="sh">\\</span>
+<span class="w">        </span><span class="p">;</span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">try</span><span class="w"> </span><span class="n">std</span><span class="p">.</span><span class="n">fmt</span><span class="p">.</span><span class="n">allocPrint</span><span class="p">(</span><span class="n">allocator</span><span class="p">,</span><span class="w"> </span><span class="n">template</span><span class="p">,</span><span class="w"> </span><span class="p">.{</span>
+<span class="w">            </span><span class="n">op_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">type_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">type_c_str</span><span class="p">,</span>
+<span class="w">            </span><span class="n">type_c_str</span><span class="p">,</span>
+<span class="w">            </span><span class="n">type_c_str</span><span class="p">,</span>
+<span class="w">            </span><span class="n">op_char</span><span class="p">,</span>
+<span class="w">        </span><span class="p">});</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>With this we can generate kernels for any data type we want. With the right implementation, generating optimized kernels becomes elegant and maintainable instead of a copy-paste factory. That's why I think codegen is a much better approach than hand-written kernels.</p>
+<h2>What's next for Plast</h2>
+<p>So where does this leave us? The plan is coming together: rewrite the core in Zig, keep the existing kernels, build a codegen module to replace the kernel copy-paste nightmare, wire it all into the JIT compiler, and finally — finally — have a framework I can actually use for reinforcement learning without wanting to throw my laptop out the window.</p>
+<p>Right now I'm working on the Zig core and the codegen module in parallel. The kernels are already done and battle-tested from the C version, so that part is essentially free — just link and go. Once the codegen is mature enough to handle the full set of elementwise ops, I'll start fuzzing it against the hand-written kernels to make sure we don't regress on correctness or performance. After that, the hand-written versions go in the trash where they belong.</p>
+<p>I don't know when the first version will be ready. Could be weeks, could be months. But for the first time this project actually feels fun again, and that's worth more than any release date.</p>
+        </article>
+    </main>
+
+    <footer>
+        <p><a href="../index.html">← back to index</a></p>
+    </footer>
+</body>
+</html>
