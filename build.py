@@ -184,107 +184,122 @@ class CatppuccinLatte(Style):
         Whitespace:     "#9ca0b0",
     }
 
-POSTS_DIR = "posts"
 
-POST_TEMPLATE = """<!DOCTYPE html>
+POSTS_SRC_DIR = "posts"
+POSTS_OUT_DIR = "writing"
+
+GITHUB_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>'
+X_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>'
+MAIL_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>'
+LINKEDIN_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>'
+
+FOOTER_ICONS = f"""    <div class="footer-links">
+        <a href="mailto:yusufshihata2006@gmail.com" target="_blank">{MAIL_ICON}</a>
+        <a href="https://github.com/Vixel2006" target="_blank">{GITHUB_ICON}</a>
+        <a href="https://x.com/this_vixel" target="_blank">{X_ICON}</a>
+        <a href="https://www.linkedin.com/in/yusufmohamed2006" target="_blank">{LINKEDIN_ICON}</a>
+    </div>"""
+
+PAGE_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{title} — Systems &amp; ML Engineer</title>
-    <link rel="stylesheet" href="../style.css">
-    <link rel="stylesheet" href="../pygments.css">
+    <title>{title}</title>
+    <link rel="stylesheet" href="{css_path}">
+    {extra_css}
 </head>
 <body>
-    <nav><a href="../index.html">← back</a></nav>
+    <nav>
+        <a href="{root}index.html" class="site-name">Vixel</a>
+        <span class="nav-links">
+            <a href="{root}index.html">About</a>
+            <a href="{root}writing.html">Writing</a>
+            <a href="{root}misc.html">Misc</a>
+        </span>
+    </nav>
+{content}
+    <footer>
+        {footer_icons}
+    </footer>
+</body>
+</html>"""
 
-    <main>
+INDEX_CONTENT = """    <header>
+        <p>
+            I&#39;m a self-taught programmer. I taught myself calculus from books at 14, Lagrangian mechanics at 16, and wrote my first line of code at 11. I&#39;ve been programming in C and Python for years, and now I&#39;m all in on Zig — it&#39;s the closest thing to a language that actually respects the programmer. Unfortunately the self-taught label gets taken from me in 2 years when I finish college.
+        </p>
+        <p>
+            I build <a href="https://github.com/Vixel2006/plast" target="_blank">plast</a> (a deep learning engine in C/CUDA) and <a href="https://github.com/Vixel2006/glu" target="_blank">glu</a> (a robotics communication framework in Zig). I want to build a new software stack for robotics from the ground up — no bloat, no abstractions that leak, no corporate rot. I work on infra and research for real AGI with world models and deep learning.
+        </p>
+        <p>
+            This blog is an archive of my journey to becoming a great engineer in the robotics space — or failing badly trying. Philosophy, principles, tech opinions, and incomplete shit.
+        </p>
+        <p>
+            My favorite novel is <em>1984</em>.             I listen to rap and rock &amp; roll.
+        </p>
+    </header>"""
+
+WRITING_CONTENT = """    <main>
+        <h1>Writing</h1>
+        <ul>
+{posts_list}
+        </ul>
+    </main>"""
+
+MISC_CONTENT = """    <main>
+        <h1>Software &amp; Frameworks</h1>
+        <ul>
+            <li>
+                <div class="item-row">
+                    <a href="https://github.com/Vixel2006/glu" target="_blank">glu</a>
+                    <span class="item-detail">zig</span>
+                </div>
+                <span class="desc">A lightweight, high-performance robotics communication framework. Serves as a zero-bloat alternative to ROS2, featuring zero-overhead serialization and deterministic real-time communication.</span>
+            </li>
+            <li>
+                <div class="item-row">
+                    <a href="https://github.com/Vixel2006/plast" target="_blank">plast</a>
+                    <span class="item-detail">c / cuda</span>
+                </div>
+                <span class="desc">A deep learning library written from scratch. Includes hand-optimized CUDA kernels, a custom graph-based scheduler, and a minimal JIT backend to eliminate high-level runtime overhead.</span>
+            </li>
+            <li>
+                <div class="item-row">
+                    <a href="https://argossecops.com" target="_blank">argos</a>
+                    <span class="item-detail">go / kafka / redis / c</span>
+                </div>
+                <span class="desc">An intelligent API security engine. Features a zero-allocation high-concurrency ingestion pipeline coupled with a low-latency native detection core designed to parse traffic at line rate.</span>
+            </li>
+            <li>
+                <div class="item-row">
+                    <a href="https://github.com/Vixel2006/GRF" target="_blank">GRF</a>
+                    <span class="item-detail">multimodal learning</span>
+                </div>
+                <span class="desc">A pre-print research paper on multimodal fusion layers in transformer architectures, exploring linear-scaling attention mechanisms for vision-language models.</span>
+            </li>
+        </ul>
+    </main>"""
+
+POST_CONTENT = """    <main>
         <article>
             <h1 class="post-title">{title}</h1>
             <div class="post-meta">{date}</div>
             {content}
         </article>
-    </main>
+    </main>"""
 
-    <footer>
-        <p><a href="../index.html">← back to index</a></p>
-    </footer>
-</body>
-</html>"""
 
-INDEX_TEMPLATE = """<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yusuf Shihata — Robotics &amp; Systems Engineer</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <header>
-        <h1>Yusuf Shihata</h1>
-        <div class="subtitle">Robotics, DL/RL, &amp; Systems Engineer &middot; c / cuda / zig / go</div>
-        <p>
-            I build real solutions for real problems. I design performance-critical robotics communication protocols, low-level reinforcement learning infrastructure, and custom deep learning libraries from scratch. 
-        </p>
-        <p>
-            I care about reducing complexity, maximizing efficiency, and restoring mechanical sympathy to software. I absolutely despise capitalism, corporate bloat, and AI slop. If you're building lightweight systems that actually add real value, we'll get along.
-        </p>
-        <p>
-            <a href="https://github.com/Vixel2006" target="_blank">github</a> &middot;
-            <a href="https://x.com/this_vixel" target="_blank">x (twitter)</a> &middot;
-            <a href="mailto:yusufshihata2006@gmail.com">email</a>
-        </p>
-    </header>
-
-    <main>
-        <section>
-            <h2>Software &amp; Frameworks</h2>
-            <ul>
-                <li>
-                    <div class="item-row">
-                        <a href="https://github.com/Vixel2006/glu" target="_blank">glu</a>
-                        <span class="item-detail">zig</span>
-                    </div>
-                    <span class="desc">A lightweight, high-performance robotics communication framework designed from scratch. Serves as a zero-bloat, direct alternative to ROS2, featuring zero-overhead serialization and deterministic real-time communication.</span>
-                </li>
-                <li>
-                    <div class="item-row">
-                        <a href="https://github.com/Vixel2006/plast" target="_blank">plast</a>
-                        <span class="item-detail">c / cuda</span>
-                    </div>
-                    <span class="desc">A deep learning library written from scratch. Includes hand-optimized CUDA kernels, a custom graph-based scheduler, and a minimal JIT backend to eliminate high-level runtime overhead.</span>
-                </li>
-                <li>
-                    <div class="item-row">
-                        <a href="https://argossecops.com" target="_blank">argos</a>
-                        <span class="item-detail">go / kafka / redis / c</span>
-                    </div>
-                    <span class="desc">An intelligent API security engine. Features a zero-allocation high-concurrency ingestion pipeline coupled with a low-latency native detection core designed to parse traffic at line rate.</span>
-                </li>
-                <li>
-                    <div class="item-row">
-                        <a href="https://github.com/Vixel2006/GRF" target="_blank">GRF</a>
-                        <span class="item-detail">multimodal learning</span>
-                    </div>
-                    <span class="desc">A pre-print research paper on multimodal fusion layers in transformer architectures, exploring linear-scaling attention mechanisms for vision-language models.</span>
-                </li>
-            </ul>
-        </section>
-
-        <section>
-            <h2>Writing &amp; Research Notes</h2>
-            <ul>
-                {posts_list}
-            </ul>
-        </section>
-    </main>
-
-    <footer>
-        <p>No analytics. No tracking. Rendered with raw HTML/CSS.</p>
-    </footer>
-</body>
-</html>"""
+def render_page(title, content, root="", extra_css=""):
+    css_path = root + "style.css"
+    return PAGE_TEMPLATE.format(
+        title=title,
+        content=content,
+        root=root,
+        css_path=css_path,
+        extra_css=extra_css,
+        footer_icons=FOOTER_ICONS,
+    )
 
 
 def convert_md(text):
@@ -309,13 +324,17 @@ def extract_date(filename):
 def post_item_html(title, date, slug):
     date_str = f'<span class="item-detail">{date}</span>' if date else ''
     return (
-        f'<li>'
+        f'            <li>'
         f'<div class="item-row">'
-        f'<a href="posts/{slug}.html">{title}</a>'
+        f'<a href="{POSTS_OUT_DIR}/{slug}.html">{title}</a>'
         f'{date_str}'
         f'</div>'
         f'</li>'
     )
+
+
+def make_slug(filename):
+    return os.path.splitext(os.path.basename(filename))[0]
 
 
 def generate_pygments_css():
@@ -328,43 +347,61 @@ def generate_pygments_css():
 }}"""
     with open("pygments.css", 'w') as f:
         f.write(combined)
-    print("  ✓ pygments.css")
+    print("  \u2713 pygments.css")
 
 
 def main():
-    os.makedirs(POSTS_DIR, exist_ok=True)
+    os.makedirs(POSTS_OUT_DIR, exist_ok=True)
 
-    md_files = sorted(glob.glob(f"{POSTS_DIR}/*.md"))
+    md_files = sorted(glob.glob(f"{POSTS_SRC_DIR}/*.md"))
     posts = []
 
     for path in md_files:
-        name = os.path.splitext(os.path.basename(path))[0]
+        slug = make_slug(path)
 
         with open(path) as f:
             raw = f.read()
 
         title = extract_title(raw)
-        date = extract_date(name)
+        date = extract_date(slug)
 
         body_raw = re.sub(r'^#\s.+(\n|$)', '', raw, count=1)
         body_html = convert_md(body_raw.strip())
 
-        page = POST_TEMPLATE.format(title=title, date=date, content=body_html)
+        extra_css = '\n    <link rel="stylesheet" href="../pygments.css">'
+        post_body = POST_CONTENT.format(title=title, date=date, content=body_html)
+        page = render_page(
+            f"{title} \u2014 Vixel",
+            post_body,
+            root="../",
+            extra_css=extra_css
+        )
 
-        out = os.path.join(POSTS_DIR, f"{name}.html")
+        out = os.path.join(POSTS_OUT_DIR, f"{slug}.html")
         with open(out, 'w') as f:
             f.write(page)
 
-        print(f"  ✓ {path} → {out}")
-        posts.append((title, date, name))
+        print(f"  \u2713 {path} \u2192 {out}")
+        posts.append((title, date, slug))
 
     posts.reverse()
     posts_html = '\n'.join(post_item_html(t, d, s) for t, d, s in posts)
-    index_html = INDEX_TEMPLATE.replace("{posts_list}", posts_html)
+    writing_body = WRITING_CONTENT.format(posts_list=posts_html)
 
+    index_html = render_page("Vixel", INDEX_CONTENT)
     with open("index.html", 'w') as f:
         f.write(index_html)
-    print("  ✓ index.html")
+    print("  \u2713 index.html")
+
+    writing_html = render_page("Writing \u2014 Vixel", writing_body)
+    with open("writing.html", 'w') as f:
+        f.write(writing_html)
+    print("  \u2713 writing.html")
+
+    misc_html = render_page("Misc \u2014 Vixel", MISC_CONTENT)
+    with open("misc.html", 'w') as f:
+        f.write(misc_html)
+    print("  \u2713 misc.html")
 
     generate_pygments_css()
     print("Done.")

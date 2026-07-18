@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vixel</title>
+    <title>Misc — Vixel</title>
     <link rel="stylesheet" href="style.css">
     
 </head>
@@ -16,20 +16,39 @@
             <a href="misc.html">Misc</a>
         </span>
     </nav>
-    <header>
-        <p>
-            I&#39;m a self-taught programmer. I taught myself calculus from books at 14, Lagrangian mechanics at 16, and wrote my first line of code at 11. I&#39;ve been programming in C and Python for years, and now I&#39;m all in on Zig — it&#39;s the closest thing to a language that actually respects the programmer. Unfortunately the self-taught label gets taken from me in 2 years when I finish college.
-        </p>
-        <p>
-            I build <a href="https://github.com/Vixel2006/plast" target="_blank">plast</a> (a deep learning engine in C/CUDA) and <a href="https://github.com/Vixel2006/glu" target="_blank">glu</a> (a robotics communication framework in Zig). I want to build a new software stack for robotics from the ground up — no bloat, no abstractions that leak, no corporate rot. I work on infra and research for real AGI with world models and deep learning.
-        </p>
-        <p>
-            This blog is an archive of my journey to becoming a great engineer in the robotics space — or failing badly trying. Philosophy, principles, tech opinions, and incomplete shit.
-        </p>
-        <p>
-            My favorite novel is <em>1984</em>.             I listen to rap and rock &amp; roll.
-        </p>
-    </header>
+    <main>
+        <h1>Software &amp; Frameworks</h1>
+        <ul>
+            <li>
+                <div class="item-row">
+                    <a href="https://github.com/Vixel2006/glu" target="_blank">glu</a>
+                    <span class="item-detail">zig</span>
+                </div>
+                <span class="desc">A lightweight, high-performance robotics communication framework. Serves as a zero-bloat alternative to ROS2, featuring zero-overhead serialization and deterministic real-time communication.</span>
+            </li>
+            <li>
+                <div class="item-row">
+                    <a href="https://github.com/Vixel2006/plast" target="_blank">plast</a>
+                    <span class="item-detail">c / cuda</span>
+                </div>
+                <span class="desc">A deep learning library written from scratch. Includes hand-optimized CUDA kernels, a custom graph-based scheduler, and a minimal JIT backend to eliminate high-level runtime overhead.</span>
+            </li>
+            <li>
+                <div class="item-row">
+                    <a href="https://argossecops.com" target="_blank">argos</a>
+                    <span class="item-detail">go / kafka / redis / c</span>
+                </div>
+                <span class="desc">An intelligent API security engine. Features a zero-allocation high-concurrency ingestion pipeline coupled with a low-latency native detection core designed to parse traffic at line rate.</span>
+            </li>
+            <li>
+                <div class="item-row">
+                    <a href="https://github.com/Vixel2006/GRF" target="_blank">GRF</a>
+                    <span class="item-detail">multimodal learning</span>
+                </div>
+                <span class="desc">A pre-print research paper on multimodal fusion layers in transformer architectures, exploring linear-scaling attention mechanisms for vision-language models.</span>
+            </li>
+        </ul>
+    </main>
     <footer>
             <div class="footer-links">
         <a href="mailto:yusufshihata2006@gmail.com" target="_blank"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg></a>
