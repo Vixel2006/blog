@@ -44,7 +44,7 @@ Second, the quality problem. AI is still generating over-engineered code with ba
 
 And the most active direction in AI research is architectural hacks to increase params and context window — not better foundational models that could actually change how language generation works. I'm a huge believer in the world model architecture Yann LeCun introduced. But we still don't have evidence it will deliver here.
 
-This context switch shit makes it obvious. AI will let you down at some point. And at that moment, you'll have to figure it out yourself.
+This should make it obvious. AI will let you down at some point. And at that moment, you'll have to figure it out yourself.
 
 ## Your own slop is better than AI slop
 
